@@ -165,8 +165,8 @@ Enter your choice:
                 self.cursor(delete)              
         return print('Client successfully deleted.')
 
-# 7. Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
-    def multy_select(self, name = '*', surname = '*', email = '*', phone_number = '*'):
+# # 7. Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
+#     def multy_select(self, name = '*', surname = '*', email = '*', phone_number = '*'):
         
         
 
@@ -178,7 +178,7 @@ test_exemplyar = DataBase()
 # test_exemplyar.add_client()
 
 # 3. Функция, позволяющая добавить телефон для существующего клиента.
-# test_exemplyar.add_clnt_phone_numb()
+test_exemplyar.add_clnt_phone_nmbr()
 
 # 4.  Функция, позволяющая изменить данные о клиенте
 # test_exemplyar.updt_clnt_data()
@@ -187,4 +187,4 @@ test_exemplyar = DataBase()
 # test_exemplyar.phone_del()
 
 # 6. Функция, позволяющая удалить существующего клиента.
-test_exemplyar.client_del()
+# test_exemplyar.client_del()
