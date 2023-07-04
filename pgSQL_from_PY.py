@@ -11,11 +11,18 @@ conn = psycopg2.connect(
     user='postgres', 
     password=password
     )
+conn.autocommit = True
+cur = conn.cursor()
+
+# SQL_query = 'SELECT * FROM clients WHERE client_id=%s OR client_id=%s'
+# cur.execute(SQL_query, (1, 2, ))
+# print(cur.fetchall())
+
 
 def cursor(SQL_query):
     with conn.cursor() as cur:
+        conn.autocommit = True
         cur.execute(SQL_query)
-        conn.commit()
 
 def drop_db():
     SQL_query = """
@@ -44,26 +51,25 @@ def create_table():
         
 # 2.  Функция, позволяющая добавить нового клиента
 def add_client(name, surname, email):
-    with conn.cursor() as cur:
-        cur.execute("""
-                     INSERT INTO clients(name, surname, email) VALUES(%s, %s, %s);
-            """, (name, surname, email))
-        conn.commit()
+    cur.execute("""
+                 INSERT INTO clients(name, surname, email) VALUES(%s, %s, %s);
+        """, (name, surname, email))
     print(f'Клиент {surname} успешно добавлен!')
-    return 
+    return
 
 # 3. Функция, позволяющая добавить телефон для существующего клиента.
 def add_phone(client_id, phone_number):
-    with conn.cursor() as cur:
-        cur.execute("""
-                     INSERT INTO phone_numbers(client_id, phone_number) VALUES(%s, %s);
-            """, (client_id, phone_number))
-        conn.commit()
+    cur.execute("""
+                 INSERT INTO phone_numbers(client_id, phone_number) VALUES(%s, %s);
+        """, (client_id, phone_number))
     print(f'Номер телефона {phone_number} успешно добавлен клиенту с ИД {client_id}!')
 
 # 4.  Функция, позволяющая изменить данные о клиенте.
 def change_client(client_id, name=None, surname=None, email=None, phone_number=None):
-    arg_list = {'name': name, 'surname': surname, 'email': email, 'phone_number': phone_number}
+    arg_list = {'name': name, 
+                'surname': surname, 
+                'email': email, 
+                'phone_number': phone_number}
     for key, arg in arg_list.items():
         if arg:
             if key == 'phone_number':
@@ -79,7 +85,25 @@ def change_client(client_id, name=None, surname=None, email=None, phone_number=N
                         """).format(Identifier(key)), (arg, client_id))
                     conn.commit()
 
-                    
+def change_client2(client_id, name=None, surname=None, email=None, phone_number=None):
+    global cur
+    arg_list = {'name': name, 
+                'surname': surname, 
+                'email': email, 
+                'phone_number': phone_number}
+    for key, arg in arg_list.items():
+        if arg:
+            if key == 'phone_number':
+                cur.execute(SQL("""
+                              UPDATE phone_numbers SET {}=%s WHERE client_id=%s
+                    """).format(Identifier(key)), (arg, client_id))
+            else:
+                with conn.cursor() as cur:
+                    cur.execute(SQL("""
+                                  UPDATE clients SET {}=%s WHERE client_id=%s
+                        """).format(Identifier(key)), (arg, client_id))
+
+change_client2(1, phone_number='161000')
 # 5. Функция, позволяющая удалить телефон для существующего клиента.
 def delete_phone_number(client_id, phone_number):
     SQL_query = (
@@ -103,18 +127,26 @@ def delete_client(client_id):
     print(f'Клиент с ИД {client_id} успешно удален!')
 
 # 7. Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
-def find_client(name=None, surname=None, email=None, phone_number=None):
-    arg_list = {'name': name, 'surname': surname, 'email': email, 'phone_number': phone_number}
-    for key, arg in arg_list.items():
-        if arg:
-            with conn.cursor() as cur:
-                cur.execute(SQL("""
-                              SELECT * FROM clients c
-                              JOIN phone_numbers pn
-                              ON c.client_id = pn.client_id 
-                              WHERE {}=%s
-                    """).format(Identifier(key)), (arg))
-                conn.commit()
+# def find_client(name=None, surname=None, email=None, phone_number=None):
+#     arg_list = {'name': name, 
+#                 'surname': surname, 
+#                 'email': email, 
+#                 'phone_number': phone_number}
+#     SQL_query = SQL.SQL('SELECT {} FROM clients').format(
+#             SQL.SQL(',').join(map(sql.Identifier, columns)),
+#             SQL.Identifier('airport')
+#         )
+    
+#     for key, arg in arg_list.items():
+#         if arg:
+#             with conn.cursor() as cur:
+#                 cur.execute(SQL("""
+#                               SELECT * FROM clients c
+#                               JOIN phone_numbers pn
+#                               ON c.client_id = pn.client_id 
+#                               WHERE {}=%s
+#                     """).format(Identifier(key)), (arg))
+#                 conn.commit()
                 
     # with conn.cursor() as cur:
     #     cur.execute("""
@@ -134,18 +166,20 @@ def find_client(name=None, surname=None, email=None, phone_number=None):
 # drop_db()
 # create_table() 
 # add_client('Июль', 'Июлев', '123@ex.com')
+# add_client('Иван', 'Ivanov', 'ivanov@ex.com')
 # add_client('Second', 'Clientfio', '222@ex.com')
 # add_phone(1, '89372275447')
 # add_phone(2, '89372275446')
-
+# add_phone(3, '89372275333')
 
 # print(change_client('1', name='Сменщиков', phone_number='123433'))
 # delete_phone_number(1, '123433')
 # delete_client(2)
-find_client('Июль')
+# find_client('Июль')
 
 
 # with psycopg2.connect(database="Python_DB", user="postgres", password=password) as conn:
 #     print(change_client2('1', name='тестов', email='1243'))
 
+cur.close()
 conn.close()
