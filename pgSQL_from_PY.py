@@ -1,5 +1,6 @@
 import psycopg2
-from psycopg2.sql import SQL, Identifier
+from psycopg2 import sql
+from psycopg2.sql import Identifier
 
 
 with open('token.txt', 'r') as token_file:
@@ -11,8 +12,9 @@ conn = psycopg2.connect(
     user='postgres', 
     password=password
     )
-conn.autocommit = True
 cur = conn.cursor()
+conn.autocommit = True
+
 
 # SQL_query = 'SELECT * FROM clients WHERE client_id=%s OR client_id=%s'
 # cur.execute(SQL_query, (1, 2, ))
@@ -66,26 +68,6 @@ def add_phone(client_id, phone_number):
 
 # 4.  Функция, позволяющая изменить данные о клиенте.
 def change_client(client_id, name=None, surname=None, email=None, phone_number=None):
-    arg_list = {'name': name, 
-                'surname': surname, 
-                'email': email, 
-                'phone_number': phone_number}
-    for key, arg in arg_list.items():
-        if arg:
-            if key == 'phone_number':
-                with conn.cursor() as cur:
-                    cur.execute(SQL("""
-                                  UPDATE phone_numbers SET {}=%s WHERE client_id=%s
-                        """).format(Identifier(key)), (arg, client_id))
-                    conn.commit()
-            else:
-                with conn.cursor() as cur:
-                    cur.execute(SQL("""
-                                  UPDATE clients SET {}=%s WHERE client_id=%s
-                        """).format(Identifier(key)), (arg, client_id))
-                    conn.commit()
-
-def change_client2(client_id, name=None, surname=None, email=None, phone_number=None):
     global cur
     arg_list = {'name': name, 
                 'surname': surname, 
@@ -94,16 +76,18 @@ def change_client2(client_id, name=None, surname=None, email=None, phone_number=
     for key, arg in arg_list.items():
         if arg:
             if key == 'phone_number':
-                cur.execute(SQL("""
-                              UPDATE phone_numbers SET {}=%s WHERE client_id=%s
-                    """).format(Identifier(key)), (arg, client_id))
+                with conn.cursor() as cur:
+                    cur.execute(sql("""
+                                  UPDATE phone_numbers SET {}=%s WHERE client_id=%s
+                        """).format(Identifier(key)), (arg, client_id))
             else:
                 with conn.cursor() as cur:
-                    cur.execute(SQL("""
+                    cur.execute(sql("""
                                   UPDATE clients SET {}=%s WHERE client_id=%s
                         """).format(Identifier(key)), (arg, client_id))
+    return print('Данные изменены успешно.')
 
-change_client2(1, phone_number='161000')
+
 # 5. Функция, позволяющая удалить телефон для существующего клиента.
 def delete_phone_number(client_id, phone_number):
     SQL_query = (
@@ -116,38 +100,50 @@ def delete_phone_number(client_id, phone_number):
 
 # 6. Функция, позволяющая удалить существующего клиента.
 def delete_client(client_id):
-    with conn.cursor() as cur:
-        cur.execute(
-            f'DELETE from phone_numbers\n'
-            f'WHERE client_id = {client_id}\n;'
-            f'DELETE from clients\n'
-            f'WHERE client_id = {client_id}\n'
-            )
-        conn.commit()
+    cur.execute(
+        f'DELETE from phone_numbers\n'
+        f'WHERE client_id = {client_id}\n;'
+        f'DELETE from clients\n'
+        f'WHERE client_id = {client_id}\n'
+        )
     print(f'Клиент с ИД {client_id} успешно удален!')
+    
 
 # 7. Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
-# def find_client(name=None, surname=None, email=None, phone_number=None):
-#     arg_list = {'name': name, 
-#                 'surname': surname, 
-#                 'email': email, 
-#                 'phone_number': phone_number}
-#     SQL_query = SQL.SQL('SELECT {} FROM clients').format(
-#             SQL.SQL(',').join(map(sql.Identifier, columns)),
-#             SQL.Identifier('airport')
-#         )
+def find_client(cur, name=None, surname=None, email=None, phone_number=None):
+    arg_list = {'name': name, 
+                'surname': surname, 
+                'email': email, 
+                'phone_number': phone_number}
+    for_ident_1 = []
+    for_ident_2 = []
+    arg_not_none = {}
+    for key, arg in arg_list.items():
+        if arg:
+            arg_not_none[key] = arg
+            for_ident_1.append(key)
+            print(for_ident_1)
+            for_ident_2.append(arg)
+            print(for_ident_2)
+    # print(arg_not_none)
+    # print(tuple(arg_not_none))  
+    SQL_query = sql.SQL("""
+                        SELECT * FROM clients c
+                        JOIN phone_numbers pn
+                        ON c.client_id = pn.client_id 
+                        WHERE {} 
+                        """).format(
+            sql.SQL(' = ').join(map(sql.Identifier, arg_not_none))
+            # sql.SQL(' = ').join(map(sql.Identifier, arg_not_none)), sql.Identifier('clients')
+        )
+    print(SQL_query)
+    a = cur.execute(SQL_query)
+    print(a)
     
-#     for key, arg in arg_list.items():
-#         if arg:
-#             with conn.cursor() as cur:
-#                 cur.execute(SQL("""
-#                               SELECT * FROM clients c
-#                               JOIN phone_numbers pn
-#                               ON c.client_id = pn.client_id 
-#                               WHERE {}=%s
-#                     """).format(Identifier(key)), (arg))
-#                 conn.commit()
-                
+find_client(cur, name='Петёк', surname='Июлев', phone_number='161000')    
+
+# find_client(name='Second', surname='Clientfio')
+
     # with conn.cursor() as cur:
     #     cur.execute("""
     #                 SELECT * FROM clients c
@@ -165,12 +161,12 @@ def delete_client(client_id):
 
 # drop_db()
 # create_table() 
-# add_client('Июль', 'Июлев', '123@ex.com')
+# add_client('Июль', 'Июлев', '1111111@ex.com')
 # add_client('Иван', 'Ivanov', 'ivanov@ex.com')
 # add_client('Second', 'Clientfio', '222@ex.com')
 # add_phone(1, '89372275447')
 # add_phone(2, '89372275446')
-# add_phone(3, '89372275333')
+# add_phone(4, '89372275333')
 
 # print(change_client('1', name='Сменщиков', phone_number='123433'))
 # delete_phone_number(1, '123433')
