@@ -140,7 +140,7 @@ def find_client(cur, name=None, surname=None, email=None, phone_number=None):
     a = cur.execute(SQL_query)
     print(a)
     
-find_client(cur, name='Петёк', surname='Июлев', phone_number='161000')    
+# find_client(cur, name='Петёк', surname='Июлев', phone_number='161000')    
 
 # find_client(name='Second', surname='Clientfio')
 
@@ -166,9 +166,9 @@ find_client(cur, name='Петёк', surname='Июлев', phone_number='161000')
 # add_client('Second', 'Clientfio', '222@ex.com')
 # add_phone(1, '89372275447')
 # add_phone(2, '89372275446')
-# add_phone(4, '89372275333')
+# add_phone(3, '89372275333')
 
-# print(change_client('1', name='Сменщиков', phone_number='123433'))
+print(change_client('1', name='Сменщиков', phone_number='123433'))
 # delete_phone_number(1, '123433')
 # delete_client(2)
 # find_client('Июль')
