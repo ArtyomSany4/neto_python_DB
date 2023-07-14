@@ -55,6 +55,8 @@
 
 
 import psycopg2
+from psycopg2 import sql
+from psycopg2.sql import Identifier
 
 conn = psycopg2.connect(
         database = 'Python_DB',
@@ -117,6 +119,25 @@ def add_phone(client_id, phone_number):
     return cursor(SQL_query, params) 
 
 
+# 4. Функция, позволяющая изменить данные о клиенте.
+def change_client(conn, client_id, name=None, surname=None, email=None, phone_number=None):
+    arg_list = {'name': name, 
+                'surname': surname, 
+                'email': email, 
+                'phone_number': phone_number}
+    for key, arg in arg_list.items():
+        if arg:
+            if key == 'phone_number':
+                with conn.cursor() as cur:
+                    cur.execute(sql("""
+                                  UPDATE phone_numbers SET {}=%s WHERE client_id=%s
+                        """).format(Identifier(key)), (arg, client_id))
+            else:
+                with conn.cursor() as cur:
+                    cur.execute(sql("""
+                                  UPDATE clients SET {}=%s WHERE client_id=%s
+                        """).format(Identifier(key)), (arg, client_id))
+    return print('Данные изменены успешно.')
 
 
 
@@ -127,4 +148,6 @@ def add_phone(client_id, phone_number):
 
 # add_client('John', 'Daw', '123@daw.com')
 # add_client('Second', 'Surname2', '222@daw.com')
+# add_client('Third', 'Surname3', '333@daw.com')
 # add_phone(1, '891111111')
+change_client(conn, 1, name = 'Измененный1')
