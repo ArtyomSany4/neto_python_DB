@@ -1,39 +1,85 @@
+# Создайте программу для управления клиентами на Python.
+
+# Требуется хранить персональную информацию о клиентах:
+
+# имя,
+# фамилия,
+# email,
+# телефон.
+# Сложность в том, что телефон у клиента может быть не один, а два, три и даже больше. А может и вообще не быть телефона, например, он не захотел его оставлять.
+
+# Вам необходимо разработать структуру БД для хранения информации и несколько функций на Python для управления данными.
+
+# Функция, создающая структуру БД (таблицы).
+# Функция, позволяющая добавить нового клиента.
+# Функция, позволяющая добавить телефон для существующего клиента.
+# Функция, позволяющая изменить данные о клиенте.
+# Функция, позволяющая удалить телефон для существующего клиента.
+# Функция, позволяющая удалить существующего клиента.
+# Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
+# Функции выше являются обязательными, но это не значит, что должны быть только они. При необходимости можете создавать дополнительные функции и классы.
+
+# Также предоставьте код, демонстрирующий работу всех написанных функций.
+
+# Результатом работы будет .py файл.
+
+# Каркас кода
+# import psycopg2
+
+# def create_db(conn):
+#     pass
+
+# def add_client(conn, first_name, last_name, email, phones=None):
+#     pass
+
+# def add_phone(conn, client_id, phone):
+#     pass
+
+# def change_client(conn, client_id, first_name=None, last_name=None, email=None, phones=None):
+#     pass
+
+# def delete_phone(conn, client_id, phone):
+#     pass
+
+# def delete_client(conn, client_id):
+#     pass
+
+# def find_client(conn, first_name=None, last_name=None, email=None, phone=None):
+#     pass
+
+
+# with psycopg2.connect(database="clients_db", user="postgres", password="postgres") as conn:
+#     pass  # вызывайте функции здесь
+
+# conn.close()
+
+
 import psycopg2
-from psycopg2 import sql
-from psycopg2.sql import Identifier
-
-
-with open('token.txt', 'r') as token_file:
-    password = token_file.read().strip()
-# password = 'МЕСТО ПОД ПАРОЛЬ'
 
 conn = psycopg2.connect(
-    database='Python_DB', 
-    user='postgres', 
-    password=password
-    )
-cur = conn.cursor()
+        database = 'Python_DB',
+        user = 'postgres',
+        password = 'PG_password'    
+            )
 conn.autocommit = True
-
-
-# SQL_query = 'SELECT * FROM clients WHERE client_id=%s OR client_id=%s'
-# cur.execute(SQL_query, (1, 2, ))
-# print(cur.fetchall())
-
-
-def cursor(SQL_query):
+        
+# 0.1 Функция, создающая курсор. 
+def cursor(SQL_query, params = None):
     with conn.cursor() as cur:
-        conn.autocommit = True
-        cur.execute(SQL_query)
+        cur.execute(SQL_query, params)
+    return 
 
+
+# 0.2 Функция, дропающая БД .
 def drop_db():
     SQL_query = """
-    TRUNCATE TABLE phone_numbers, clients;
-    DROP TABLE phone_numbers, clients; 
-    """
+TRUNCATE TABLE phone_numbers, clients;
+DROP TABLE phone_numbers, clients; 
+"""
     return cursor(SQL_query)
-    
-# 1. Функция, создающая структуру БД (таблицы). 
+
+
+# 1. Функция, создающая структуру БД (таблицы).
 def create_table():
     SQL_query = """
     CREATE TABLE IF NOT EXISTS clients(
@@ -50,132 +96,35 @@ def create_table():
     """
     return cursor(SQL_query)
 
-        
-# 2.  Функция, позволяющая добавить нового клиента
-def add_client(name, surname, email):
-    cur.execute("""
-                 INSERT INTO clients(name, surname, email) VALUES(%s, %s, %s);
-        """, (name, surname, email))
-    print(f'Клиент {surname} успешно добавлен!')
-    return
 
+# 2. Функция, позволяющая добавить нового клиента.
+def add_client(name, surname, email):
+    SQL_query = """
+        INSERT INTO clients(name, surname, email)   
+        VALUES(%s, %s, %s)
+    """
+    params = (name, surname, email)
+    return cursor(SQL_query, params)
+
+  
 # 3. Функция, позволяющая добавить телефон для существующего клиента.
 def add_phone(client_id, phone_number):
-    cur.execute("""
-                 INSERT INTO phone_numbers(client_id, phone_number) VALUES(%s, %s);
-        """, (client_id, phone_number))
-    print(f'Номер телефона {phone_number} успешно добавлен клиенту с ИД {client_id}!')
-
-# 4.  Функция, позволяющая изменить данные о клиенте.
-def change_client(client_id, name=None, surname=None, email=None, phone_number=None):
-    global cur
-    arg_list = {'name': name, 
-                'surname': surname, 
-                'email': email, 
-                'phone_number': phone_number}
-    for key, arg in arg_list.items():
-        if arg:
-            if key == 'phone_number':
-                with conn.cursor() as cur:
-                    cur.execute(sql("""
-                                  UPDATE phone_numbers SET {}=%s WHERE client_id=%s
-                        """).format(Identifier(key)), (arg, client_id))
-            else:
-                with conn.cursor() as cur:
-                    cur.execute(sql("""
-                                  UPDATE clients SET {}=%s WHERE client_id=%s
-                        """).format(Identifier(key)), (arg, client_id))
-    return print('Данные изменены успешно.')
+    SQL_query = """
+        INSERT INTO phone_numbers (client_id, phone_number)   
+        VALUES(%s, %s)
+    """
+    params = (client_id, phone_number)
+    return cursor(SQL_query, params) 
 
 
-# 5. Функция, позволяющая удалить телефон для существующего клиента.
-def delete_phone_number(client_id, phone_number):
-    SQL_query = (
-            f'DELETE from phone_numbers\n'
-            f'WHERE client_id = {client_id}\n'
-            f'AND phone_number = \'{phone_number}\';'
-        )
-    cursor(SQL_query)
-    return print('Phone number successfully deleted.')
 
-# 6. Функция, позволяющая удалить существующего клиента.
-def delete_client(client_id):
-    cur.execute(
-        f'DELETE from phone_numbers\n'
-        f'WHERE client_id = {client_id}\n;'
-        f'DELETE from clients\n'
-        f'WHERE client_id = {client_id}\n'
-        )
-    print(f'Клиент с ИД {client_id} успешно удален!')
-    
 
-# 7. Функция, позволяющая найти клиента по его данным: имени, фамилии, email или телефону.
-def find_client(cur, name=None, surname=None, email=None, phone_number=None):
-    arg_list = {'name': name, 
-                'surname': surname, 
-                'email': email, 
-                'phone_number': phone_number}
-    for_ident_1 = []
-    for_ident_2 = []
-    arg_not_none = {}
-    for key, arg in arg_list.items():
-        if arg:
-            arg_not_none[key] = arg
-            for_ident_1.append(key)
-            print(for_ident_1)
-            for_ident_2.append(arg)
-            print(for_ident_2)
-    # print(arg_not_none)
-    # print(tuple(arg_not_none))  
-    SQL_query = sql.SQL("""
-                        SELECT * FROM clients c
-                        JOIN phone_numbers pn
-                        ON c.client_id = pn.client_id 
-                        WHERE {} 
-                        """).format(
-            sql.SQL(' = ').join(map(sql.Identifier, arg_not_none))
-            # sql.SQL(' = ').join(map(sql.Identifier, arg_not_none)), sql.Identifier('clients')
-        )
-    print(SQL_query)
-    a = cur.execute(SQL_query)
-    print(a)
-    
-# find_client(cur, name='Петёк', surname='Июлев', phone_number='161000')    
 
-# find_client(name='Second', surname='Clientfio')
-
-    # with conn.cursor() as cur:
-    #     cur.execute("""
-    #                 SELECT * FROM clients c
-    #                 LEFT JOIN phone_numbers pn
-    #                 ON c.client_id = pn.client_id
-    #                 WHERE 
-    #                 c.name = %s 
-    #                 OR c.surname = %s 
-    #                 OR c.email = %s
-    #                 OR pn.phone_number = %s;
-    #                       """, (name, surname, email, phone_number)
-    #                       )
-    #     print(cur.fetchall())
-    
-
+# Дропаем базу
 # drop_db()
-# create_table() 
-# add_client('Июль', 'Июлев', '1111111@ex.com')
-# add_client('Иван', 'Ivanov', 'ivanov@ex.com')
-# add_client('Second', 'Clientfio', '222@ex.com')
-# add_phone(1, '89372275447')
-# add_phone(2, '89372275446')
-# add_phone(3, '89372275333')
+# Проверяем все функции по порядку
+# create_table()  
 
-print(change_client('1', name='Сменщиков', phone_number='123433'))
-# delete_phone_number(1, '123433')
-# delete_client(2)
-# find_client('Июль')
-
-
-# with psycopg2.connect(database="Python_DB", user="postgres", password=password) as conn:
-#     print(change_client2('1', name='тестов', email='1243'))
-
-cur.close()
-conn.close()
+# add_client('John', 'Daw', '123@daw.com')
+# add_client('Second', 'Surname2', '222@daw.com')
+# add_phone(1, '891111111')
