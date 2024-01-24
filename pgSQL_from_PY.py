@@ -10,9 +10,9 @@
 
 # Вам необходимо разработать структуру БД для хранения информации и несколько функций на Python для управления данными.
 
-# Функция, создающая структуру БД (таблицы).
-# Функция, позволяющая добавить нового клиента.
-# Функция, позволяющая добавить телефон для существующего клиента.
+# Функция, создающая структуру БД (таблицы). Done
+# Функция, позволяющая добавить нового клиента. Done
+# Функция, позволяющая добавить телефон для существующего клиента. Done
 # Функция, позволяющая изменить данные о клиенте.
 # Функция, позволяющая удалить телефон для существующего клиента.
 # Функция, позволяющая удалить существующего клиента.
@@ -71,6 +71,13 @@ def cursor(SQL_query, params = None):
         cur.execute(SQL_query, params)
     return 
 
+# 0.1.1 Курсор с фетчом. 
+def cursor_f(SQL_query, params = None):
+    with conn.cursor() as cur:
+        cur.execute(SQL_query, params)
+        result = cur.fetchone()[0]
+        print('Client_ID =', result)
+    return 
 
 # 0.2 Функция, дропающая БД .
 def drop_db():
@@ -119,7 +126,8 @@ def add_phone(client_id, phone_number):
     return cursor(SQL_query, params) 
 
 
-# 4. Функция, позволяющая изменить данные о клиенте.
+# 4. Функция, позволяющая изменить данные о клиенте. 
+# Интерпретатор почему-то пишет TypeError: 'module' object is not callable
 def change_client(conn, client_id, name=None, surname=None, email=None, phone_number=None):
     arg_list = {'name': name, 
                 'surname': surname, 
@@ -139,15 +147,24 @@ def change_client(conn, client_id, name=None, surname=None, email=None, phone_nu
                         """).format(Identifier(key)), (arg, client_id))
     return print('Данные изменены успешно.')
 
-
+# Селект для отладки
+def select_function(conn, name):
+    SQL_query = ("""
+        SELECT client_id FROM clients
+        WHERE name=%s
+    """)
+    params = (name, )
+    result = cursor_f(SQL_query, params)
+    return
 
 # Дропаем базу
 # drop_db()
-# Проверяем все функции по порядку
+# # Проверяем все функции по порядку
 # create_table()  
 
 # add_client('John', 'Daw', '123@daw.com')
 # add_client('Second', 'Surname2', '222@daw.com')
 # add_client('Third', 'Surname3', '333@daw.com')
 # add_phone(1, '891111111')
-change_client(conn, 1, name = 'Измененный1')
+# change_client(conn, 1, name = 'Измененный1')
+select_function(conn, 'Third')
